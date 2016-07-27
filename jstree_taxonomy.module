@@ -1,0 +1,77 @@
+<?php
+/**
+ * Implements hook_menu().
+ */
+function jstree_taxonomy_menu() {
+	$items = array();
+	$items['jstree'] = array(
+		'title' => '',
+		'page callback' => 'jstree_page_callback',
+		'access callback' => true
+	);
+  $items['admin/config/administration/jstree_taxonomy'] = array(
+  'title' => 'Jstree taxonomy  module settings',
+  'description' => 'Jstree taxonomy  module settings',
+  'page callback' => 'drupal_get_form',
+  'page arguments' => array('jstree_taxonomy_form_admin'),
+  'access arguments' => array('access administration pages'),
+  'type' => MENU_NORMAL_ITEM,
+ );
+
+	return $items;
+}
+
+function jstree_page_callback(){
+	$path = variable_get('jstree_taxonomy_path', '');
+	$vocabulary_name = variable_get('jstree_taxonomy_vocabulary_name', '');
+	$tree = build_tree($vocabulary_name, $path);
+	$taxonomy_tree_json = json_encode($tree);
+	drupal_add_js(array('jstree_taxonomy' => array('taxonomy_tree_json' => $taxonomy_tree_json)), array('type' => 'setting'));
+	drupal_add_js(drupal_get_path('module', 'jstree_taxonomy') . '/jstree_taxonomy.js', array(
+  	'type' => 'file',
+	));
+
+  drupal_add_js('https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.1/jstree.min.js', 'external');
+  drupal_add_css('https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.1/themes/default/style.min.css', 'external');
+	return "<div id ='jstree_taxonomy'></div>";
+}
+function build_tree($vocabulary_name, $term_url){
+	$vid = taxonomy_vocabulary_machine_name_load($vocabulary_name)->vid;
+	$hierarchy_raw = taxonomy_get_tree($vid);
+	$hierarchy_array_formated =  array();
+
+	foreach ($hierarchy_raw as $key => $term) {
+	    $term_array = array();
+	    $term_array["id"] = $term->tid;
+	    $term_array["text"] = $term->name;
+	    $parent = ($term->parents[0] == 0) ? "#" : $term->parents[0];
+	    $term_array["parent"] = $parent;
+	    if($parent != "#"){
+	        $term_array["a_attr"]  = array('href' => '/'.$term_url.'/'.$term->tid );
+	    }
+	    $hierarchy_array_formated[] = $term_array;
+	}
+	return $hierarchy_array_formated;
+}
+
+
+function jstree_taxonomy_form_admin() {
+  $form = array();
+  $form['jstree_taxonomy_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Path'),
+    '#default_value' => variable_get('jstree_taxonomy_path', ''),
+    '#description' => t("The path of each item"),
+    '#required' => TRUE,
+  );
+
+  $form['jstree_taxonomy_vocabulary_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Vocabulary'),
+    '#default_value' => variable_get('jstree_taxonomy_vocabulary_name', ''),
+    '#description' => t("The Vocabulary name"),
+    '#required' => TRUE,
+  );
+
+  return system_settings_form($form);
+}
