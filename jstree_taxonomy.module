@@ -46,9 +46,8 @@ function build_tree($vocabulary_name, $term_url){
     $term_array["text"] = $term->name;
     $parent = ($term->parents[0] == 0) ? "#" : $term->parents[0];
     $term_array["parent"] = $parent;
-    if($parent != "#"){
-      $term_array["a_attr"]  = array('href' => '/'.$term_url.'/'.$term->tid );
-    }
+    $term_array["a_attr"]  = array('href' => '/'.$term_url.'/'.$term->tid );
+
     $hierarchy_array_formated[] = $term_array;
 	}
 	return $hierarchy_array_formated;
